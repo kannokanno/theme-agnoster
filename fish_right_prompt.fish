@@ -1,34 +1,52 @@
-# right prompt for agnoster theme
-# shows vim mode status
+# See https://github.com/oh-my-fish/theme-bobthefish/blob/master/fish_right_prompt.fish
 
-# Redefine fish_mode_prompt function as empty to hide fish-shell mode indicator
-function fish_mode_prompt
-end
+# You can override some default right prompt options in your config.fish:
+#     set -g theme_date_format "+%a %H:%M"
 
-function prompt_vi_mode -d 'vi mode status indicator'
-  set -l right_segment_separator \uE0B2
-  switch $fish_bind_mode
-      case default
-        set_color green
-        echo "$right_segment_separator"
-        set_color -b green black
-        echo " N "
-      case insert
-        set_color blue
-        echo "$right_segment_separator"
-        set_color -b blue black
-        echo " I "
-      case visual
-        set_color red
-        echo "$right_segment_separator"
-        set_color -b red black
-        echo " V "
-    end
-end
+function __bobthefish_cmd_duration -S -d 'Show command duration'
+  [ "$theme_display_cmd_duration" = "no" ]; and return
+  [ "$CMD_DURATION" -lt 100 ]; and return
 
-function fish_right_prompt -d 'Prints right prompt'
-  if test "$fish_key_bindings" = "fish_vi_key_bindings"
-    prompt_vi_mode
-    set_color normal
+  if [ "$CMD_DURATION" -lt 5000 ]
+    echo -ns $CMD_DURATION 'ms'
+  else if [ "$CMD_DURATION" -lt 60000 ]
+    math "scale=1;$CMD_DURATION/1000" | sed 's/\\.0$//'
+    echo -n 's'
+  else if [ "$CMD_DURATION" -lt 3600000 ]
+    set_color $fish_color_error
+    math "scale=1;$CMD_DURATION/60000" | sed 's/\\.0$//'
+    echo -n 'm'
+  else
+    set_color $fish_color_error
+    math "scale=2;$CMD_DURATION/3600000" | sed 's/\\.0$//'
+    echo -n 'h'
   end
+
+  set_color $fish_color_normal
+  set_color $fish_color_autosuggestion
+
+  [ "$theme_display_date" = "no" ]
+    or echo -ns ' ' $__bobthefish_left_arrow_glyph
+end
+
+function __bobthefish_timestamp -S -d 'Show the current timestamp'
+  [ "$theme_display_date" = "no" ]; and return
+  set -q theme_date_format
+    or set -l theme_date_format "+%c"
+
+  echo -n ' '
+  date $theme_date_format
+end
+
+function fish_right_prompt -d 'bobthefish is all about the right prompt'
+  set -l __bobthefish_left_arrow_glyph \uE0B3
+  if [ "$theme_powerline_fonts" = "no" ]
+    set __bobthefish_left_arrow_glyph '<'
+  end
+
+  set_color $fish_color_autosuggestion
+
+  __bobthefish_cmd_duration
+  __bobthefish_timestamp
+  set_color normal
 end
